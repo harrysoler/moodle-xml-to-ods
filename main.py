@@ -40,14 +40,14 @@ class Question(object):
 
 # limit how much items a list can have
 @curry
-def with_n_items[T](length: int, items: list[T]) -> Maybe[list[T]]:
+def has_n_items_or_nothing[T](length: int, items: list[T]) -> Maybe[list[T]]:
     return methods.cond(
         Maybe,
         len(items) == length,
         items
     )
 
-def flatten_list_of_somethings[T](items: list[Some[T]]) -> Maybe[list[T]]:
+def maybes_to_list_or_nothing[T](items: list[Some[T]]) -> Maybe[list[T]]:
     return flow(
         map(lambda item: is_successful(item), items),
         lambda items_are_something: all(items_are_something),
@@ -116,10 +116,10 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
         element,
         get_childs_with_tag(Tag.ANSWER),
         # check if are number of answers required or nothing
-        bind(with_n_items(NUMBER_OF_ANSWERS)),
+        bind(has_n_items_or_nothing(NUMBER_OF_ANSWERS)),
         tap(warn_if_answers_quantity_dont_match),
         bind(lambda answers: map(element_to_answer, answers)),
-        flatten_list_of_somethings,
+        maybes_to_list_or_nothing,
         bind_optional(tuple)
     )
 
@@ -136,6 +136,7 @@ def element_to_question(element: ET.Element) -> Maybe[Question]:
         for answers in extract_answers(element)
     )
 
+# all questions must be parsed successfully or nothing
 def extract_questions(element: ET.Element) -> Maybe[list[Question]]:
     logging.debug(f"extract_questions: Reading {element}")
 
@@ -143,7 +144,7 @@ def extract_questions(element: ET.Element) -> Maybe[list[Question]]:
         element,
         get_childs_with_tag(Tag.QUESTION),
         bind(lambda questions: map(element_to_question, questions)),
-        flatten_list_of_somethings
+        maybes_to_list_or_nothing
     )
 
 def main():
