@@ -1,0 +1,108 @@
+import logging
+import xml.etree.ElementTree as ET
+
+from returns.curry import curry
+from returns.functions import tap
+from returns.maybe import Maybe, Nothing
+from returns.pipeline import flow
+from returns.pointfree import bind, bind_optional
+
+from constant import NUMBER_OF_ANSWERS
+from helper import (
+    has_n_items_or_nothing,
+    maybes_to_list_or_nothing,
+    warn_if_list_is_nothing,
+)
+from model import Answer, Answers, Question, Tag
+
+
+@curry
+def warn_if_missing_tag(tag: Tag, element: Maybe[ET.Element]) -> None:
+    element.or_else_call(lambda: logging.warning(f"Element <{tag}> not found"))
+
+@curry
+def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
+    logging.debug(f"get_child_with_tag: Reading {element} for tag '{tag}'")
+
+    return tap(warn_if_missing_tag(tag))(
+        Maybe.from_optional(element.find('./' + tag))
+    )
+
+@curry
+def get_childs_with_tag(tag: Tag, element: ET.Element) -> Maybe[list[ET.Element]]:
+    logging.debug(f"get_childs_with_tag: Reading {element} for tags '{tag}'")
+
+    return tap(warn_if_missing_tag(tag))(
+        Maybe.from_optional(element.findall('./' + tag))
+    )
+
+# TODO: better function name
+# when tags have a <text> child, get directly their value
+def get_element_sub_text(element: ET.Element) -> Maybe[str]:
+    logging.debug(f"get_element_sub_text: Reading {element}")
+
+    return flow(
+        element,
+        get_child_with_tag(Tag.TEXT),
+        bind_optional(lambda element: element.text.strip())
+    )
+
+# TODO: better function name
+def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
+    logging.debug(f"get_child_tag_sub_text: Reading {element} for tag '{tag}'")
+
+    return flow(
+        element,
+        get_child_with_tag(tag),
+        bind(get_element_sub_text)
+    )
+
+def element_to_answer(element: ET.Element) -> Maybe[Answer]:
+    logging.debug(f"element_to_answer: Reading {element}")
+
+    if element.tag != Tag.ANSWER:
+        return Nothing
+
+    return Maybe.do(
+        Answer(text, feedback)
+        for text in get_element_sub_text(element)
+        for feedback in get_child_tag_sub_text(Tag.FEEDBACK, element)
+    )
+
+def element_to_question(element: ET.Element) -> Maybe[Question]:
+    logging.debug(f"element_to_question: Reading {element}")
+
+    if element.tag != Tag.QUESTION:
+        return Nothing
+
+    return Maybe.do(
+        Question(name, text, answers)
+        for name in get_child_tag_sub_text(Tag.NAME, element)
+        for text in get_child_tag_sub_text(Tag.QUESTION_TEXT, element)
+        for answers in extract_answers_from(element)
+    )
+
+def extract_answers_from(element: ET.Element) -> Maybe[Answers]:
+    logging.debug(f"extract_answers: Reading {element}")
+
+    return flow(
+        element,
+        get_childs_with_tag(Tag.ANSWER),
+        # check if are number of answers required or nothing
+        bind(has_n_items_or_nothing(NUMBER_OF_ANSWERS)),
+        tap(warn_if_list_is_nothing),
+        bind(lambda answers: map(element_to_answer, answers)),
+        maybes_to_list_or_nothing,
+        bind_optional(tuple)
+    )
+
+# all questions must be parsed successfully or nothing
+def extract_questions_from(element: ET.Element) -> Maybe[list[Question]]:
+    logging.debug(f"extract_questions: Reading {element}")
+
+    return flow(
+        element,
+        get_childs_with_tag(Tag.QUESTION),
+        bind(lambda questions: map(element_to_question, questions)),
+        maybes_to_list_or_nothing
+    )

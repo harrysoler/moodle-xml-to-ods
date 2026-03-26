@@ -1,0 +1,1 @@
+NUMBER_OF_ANSWERS: int = 4
