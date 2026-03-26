@@ -58,9 +58,9 @@ def maybes_to_list_or_nothing[T](items: list[Some[T]]) -> Maybe[list[T]]:
 def warn_if_missing_tag(tag: Tag, element: Maybe[ET.Element]) -> None:
     element.or_else_call(lambda: logging.warning(f"Element <{tag}> not found"))
 
-def warn_if_answers_quantity_dont_match(answers: Maybe[list[ET.Element]]) -> None:
-    if answers == Nothing:
-        logging.warning(f"Answers quantity not compliant want {NUMBER_OF_ANSWERS}")
+def warn_if_list_is_nothing[T](items: Maybe[list[T]]) -> None:
+    if items == Nothing:
+        logging.warning("Generated list is empty")
 
 @curry
 def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
@@ -117,7 +117,7 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
         get_childs_with_tag(Tag.ANSWER),
         # check if are number of answers required or nothing
         bind(has_n_items_or_nothing(NUMBER_OF_ANSWERS)),
-        tap(warn_if_answers_quantity_dont_match),
+        tap(warn_if_list_is_nothing),
         bind(lambda answers: map(element_to_answer, answers)),
         maybes_to_list_or_nothing,
         bind_optional(tuple)
@@ -158,6 +158,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-            
