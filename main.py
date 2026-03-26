@@ -136,19 +136,24 @@ def element_to_question(element: ET.Element) -> Maybe[Question]:
         for answers in extract_answers(element)
     )
 
+def extract_questions(element: ET.Element) -> Maybe[list[Question]]:
+    logging.debug(f"extract_questions: Reading {element}")
+
+    return flow(
+        element,
+        get_childs_with_tag(Tag.QUESTION),
+        bind(lambda questions: map(element_to_question, questions)),
+        flatten_list_of_somethings
+    )
+
 def main():
     tree = ET.parse("./test.xml")
     root = tree.getroot()
 
-    logging.getLogger().setLevel(logging.DEBUG)
+    # logging.getLogger().setLevel(logging.DEBUG)
 
-    question = flow(
-        root,
-        get_child_with_tag(Tag.QUESTION),
-        bind(element_to_question)
-    )
-
-    print(question)
+    questions = extract_questions(root)
+    print(questions)
 
 if __name__ == "__main__":
     main()
