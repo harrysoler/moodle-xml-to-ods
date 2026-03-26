@@ -2,11 +2,11 @@ import xml.etree.ElementTree as ET
 import logging
 from dataclasses import dataclass
 from typing import TypeAlias
-# from returns.result import Result, Success, Failure
 from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
 from returns.pointfree import bind
 from returns.curry import curry
+from returns.functions import tap
 
 NAME_TAG = "name"
 TEXT_TAG = "text"
@@ -31,8 +31,14 @@ class Question(object):
     # answers: Answers
 
 @curry
+def warn_if_missing_tag(tag: str, element: Maybe[ET.Element]) -> None:
+    element.or_else_call(lambda: logging.warning(f"Element <{tag}> not found"))
+
+@curry
 def get_child_with_tag(tag: str, element: ET.Element) -> Maybe[ET.Element]:
-    return Maybe.from_optional(element.find('./' + tag))
+    return tap(warn_if_missing_tag(tag))(
+        Maybe.from_optional(element.find('./' + tag))
+    )
 
 def get_element_text(element: ET.Element) -> Maybe[str]:
     return Some(element.text)
