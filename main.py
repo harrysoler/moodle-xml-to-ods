@@ -31,13 +31,13 @@ class Answer(object):
         if len(self.text) == 0:
             raise ValueError("The answer text cannot be empty")
 
-Answers: TypeAlias = tuple[(Answer,) * NUMBER_OF_ANSWERS]
+Answers: TypeAlias = tuple[Answer, Answer, Answer, Answer]
 
 @dataclass
 class Question(object):
     title: str
     text: str
-    # answers: FourAnswers
+    answers: Answers
 
 # limit how much items a list can have
 @curry
@@ -103,17 +103,17 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
         bind(with_n_items(NUMBER_OF_ANSWERS)),
         bind(lambda answers: map(element_to_answer, answers)),
         flatten_list_of_somethings,
-        bind(tuple)
-    )
+    ).bind_optional(tuple)
 
 def element_to_question(element: ET.Element) -> Maybe[Question]:
     if element.tag != Tag.QUESTION:
         return Nothing
 
     return Maybe.do(
-        Question(name, text)
+        Question(name, text, answers)
         for name in get_child_tag_sub_text(Tag.NAME, element)
         for text in get_child_tag_sub_text(Tag.QUESTION_TEXT, element)
+        for answers in extract_answers(element)
     )
 
 def main():
