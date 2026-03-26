@@ -9,6 +9,10 @@ from returns.functions import tap
 from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
 from returns.pointfree import bind
+from returns import methods, pointfree
+from returns.pipeline import is_successful
+
+NUMBER_OF_ANSWERS: int = 4
 
 class Tag(StrEnum):
     NAME = "name"
@@ -16,6 +20,7 @@ class Tag(StrEnum):
     QUESTION = "question"
     QUESTION_TEXT = "questiontext"
     ANSWER = "answer"
+    FEEDBACK = "feedback"
 
 @dataclass
 class Answer(object):
@@ -26,13 +31,29 @@ class Answer(object):
         if len(self.text) == 0:
             raise ValueError("The answer text cannot be empty")
 
-Answers: TypeAlias = tuple[Answer, Answer, Answer, Answer]
+Answers: TypeAlias = tuple[(Answer,) * NUMBER_OF_ANSWERS]
 
 @dataclass
 class Question(object):
     title: str
     text: str
-    # answers: Answers
+    # answers: FourAnswers
+
+# limit how much items a list can have
+@curry
+def with_n_items[T](length: int, items: list[T]) -> Maybe[list[T]]:
+    return methods.cond(
+        Maybe,
+        len(items) == length,
+        items
+    )
+
+def flatten_list_of_somethings[T](items: list[Some[T]]) -> Maybe[list[T]]:
+    return flow(
+        map(lambda item: is_successful(item), items),
+        lambda items_are_something: all(items_are_something),
+        pointfree.cond(Maybe, list(map(lambda item: item.unwrap(), items)))
+    )
 
 @curry
 def warn_if_missing_tag(tag: Tag, element: Maybe[ET.Element]) -> None:
@@ -71,6 +92,34 @@ def extract_question_name(element: ET.Element) -> Maybe[str]:
         bind(get_element_sub_text)
     )
 
+def extract_answer_feedback(element: ET.Element) -> Maybe[str]:
+    return flow(
+        element,
+        get_child_with_tag(Tag.FEEDBACK),
+        bind(get_element_sub_text)
+    )
+
+def element_to_answer(element: ET.Element) -> Maybe[Answer]:
+    if element.tag != Tag.ANSWER:
+        return Nothing
+
+    return Maybe.do(
+        Answer(text, feedback)
+        for text in get_element_sub_text(element)
+        for feedback in extract_answer_feedback(element)
+    )
+
+def extract_answers(element: ET.Element) -> Maybe[Answers]:
+    return flow(
+        element,
+        get_childs_with_tag(Tag.ANSWER),
+        # check if are number of answers required or nothing
+        bind(with_n_items(NUMBER_OF_ANSWERS)),
+        bind(lambda answers: map(element_to_answer, answers)),
+        flatten_list_of_somethings,
+        bind(tuple)
+    )
+
 def element_to_question(element: ET.Element) -> Maybe[Question]:
     if element.tag != Tag.QUESTION:
         return Nothing
@@ -80,7 +129,6 @@ def element_to_question(element: ET.Element) -> Maybe[Question]:
         for name in extract_question_name(element)
         for text in extract_question_text(element)
     )
-
 
 def main():
     tree = ET.parse("./test.xml")
