@@ -8,7 +8,7 @@ from returns.curry import curry
 from returns.functions import tap
 from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
-from returns.pointfree import bind
+from returns.pointfree import bind, bind_optional
 from returns import methods, pointfree
 from returns.pipeline import is_successful
 
@@ -76,7 +76,8 @@ def get_element_sub_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(Tag.TEXT),
-    ).bind_optional(lambda element: element.text)
+        bind_optional(lambda element: element.text)
+    )
 
 def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
     return flow(
@@ -103,7 +104,8 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
         bind(with_n_items(NUMBER_OF_ANSWERS)),
         bind(lambda answers: map(element_to_answer, answers)),
         flatten_list_of_somethings,
-    ).bind_optional(tuple)
+        bind_optional(tuple)
+    )
 
 def element_to_question(element: ET.Element) -> Maybe[Question]:
     if element.tag != Tag.QUESTION:
