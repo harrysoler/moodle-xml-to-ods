@@ -11,7 +11,7 @@ from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow, is_successful
 from returns.pointfree import bind, bind_optional
 
-NUMBER_OF_ANSWERS: int = 3
+NUMBER_OF_ANSWERS: int = 4
 
 class Tag(StrEnum):
     NAME = "name"
@@ -64,18 +64,24 @@ def warn_if_answers_quantity_dont_match(answers: Maybe[list[ET.Element]]) -> Non
 
 @curry
 def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
+    logging.debug(f"get_child_with_tag: Reading {element} for tag '{tag}'")
+
     return tap(warn_if_missing_tag(tag))(
         Maybe.from_optional(element.find('./' + tag))
     )
 
 @curry
 def get_childs_with_tag(tag: Tag, element: ET.Element) -> Maybe[list[ET.Element]]:
+    logging.debug(f"get_childs_with_tag: Reading {element} for tags '{tag}'")
+
     return tap(warn_if_missing_tag(tag))(
         Maybe.from_optional(element.findall('./' + tag))
     )
 
 # when tags have a <text> child, get directly their value
 def get_element_sub_text(element: ET.Element) -> Maybe[str]:
+    logging.debug(f"get_element_sub_text: Reading {element}")
+
     return flow(
         element,
         get_child_with_tag(Tag.TEXT),
@@ -83,6 +89,8 @@ def get_element_sub_text(element: ET.Element) -> Maybe[str]:
     )
 
 def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
+    logging.debug(f"get_child_tag_sub_text: Reading {element} for tag '{tag}'")
+
     return flow(
         element,
         get_child_with_tag(tag),
@@ -90,6 +98,8 @@ def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
     )
 
 def element_to_answer(element: ET.Element) -> Maybe[Answer]:
+    logging.debug(f"element_to_answer: Reading {element}")
+
     if element.tag != Tag.ANSWER:
         return Nothing
 
@@ -100,6 +110,8 @@ def element_to_answer(element: ET.Element) -> Maybe[Answer]:
     )
 
 def extract_answers(element: ET.Element) -> Maybe[Answers]:
+    logging.debug(f"extract_answers: Reading {element}")
+
     return flow(
         element,
         get_childs_with_tag(Tag.ANSWER),
@@ -112,6 +124,8 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
     )
 
 def element_to_question(element: ET.Element) -> Maybe[Question]:
+    logging.debug(f"element_to_question: Reading {element}")
+
     if element.tag != Tag.QUESTION:
         return Nothing
 
@@ -125,6 +139,8 @@ def element_to_question(element: ET.Element) -> Maybe[Question]:
 def main():
     tree = ET.parse("./test.xml")
     root = tree.getroot()
+
+    logging.getLogger().setLevel(logging.DEBUG)
 
     question = flow(
         root,
