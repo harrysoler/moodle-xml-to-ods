@@ -147,7 +147,7 @@ def extract_questions(element: ET.Element) -> Maybe[list[Question]]:
     )
 
 def main():
-    tree = ET.parse("./desarrollo_orientado_a_servicios.xml")
+    tree = ET.parse("./test.xml")
     root = tree.getroot()
 
     # logging.getLogger().setLevel(logging.DEBUG)
