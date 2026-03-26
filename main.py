@@ -15,6 +15,7 @@ class Tag(StrEnum):
     TEXT = "text"
     QUESTION = "question"
     QUESTION_TEXT = "questiontext"
+    ANSWER = "answer"
 
 @dataclass
 class Answer(object):
@@ -43,13 +44,18 @@ def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
         Maybe.from_optional(element.find('./' + tag))
     )
 
+@curry
+def get_childs_with_tag(tag: Tag, element: ET.Element) -> Maybe[list[ET.Element]]:
+    return tap(warn_if_missing_tag(tag))(
+        Maybe.from_optional(element.findall('./' + tag))
+    )
+
 # when tags have a <text> child, get directly their value
 def get_element_sub_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(Tag.TEXT),
-        bind(lambda element: Some(element.text))
-    )
+    ).bind_optional(lambda element: element.text)
 
 def extract_question_text(element: ET.Element) -> Maybe[str]:
     return flow(
