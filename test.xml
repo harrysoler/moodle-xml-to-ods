@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<quiz>
+  <question type="multichoice">
+    <name>
+      <text>Name of the Question</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[Text of the question]]></text>
+    </questiontext>
+    <single>true</single>
+    <shuffleanswers>1</shuffleanswers>
+    <answer fraction="100">
+      <text>The correct answer</text>
+      <feedback>
+        <text>Correct!</text>
+      </feedback>
+    </answer>
+    <answer fraction="0">
+      <text>A distractor</text>
+      <feedback>
+        <text>Oops!</text>
+      </feedback>
+    </answer>
+    <answer fraction="0">
+      <text>Another distractor</text>
+      <feedback>
+        <text>Oopsie!</text>
+      </feedback>
+    </answer>
+    <answer fraction="0">
+      <text>Third distractor</text>
+      <feedback>
+        <text>Oopsies!</text>
+      </feedback>
+    </answer>
+  </question>
+</quiz>

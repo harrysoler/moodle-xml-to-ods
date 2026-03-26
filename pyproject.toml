@@ -1,0 +1,13 @@
+[project]
+name = "moodle-xml-to-ods"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pyexcel-ods>=0.6.0",
+    "returns>=0.26.0",
+]
+
+[pip]
+link-mode = "copy"
