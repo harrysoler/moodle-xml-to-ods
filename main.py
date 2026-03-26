@@ -1,12 +1,13 @@
-import xml.etree.ElementTree as ET
 import logging
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import TypeAlias
+
+from returns.curry import curry
+from returns.functions import tap
 from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
 from returns.pointfree import bind
-from returns.curry import curry
-from returns.functions import tap
 
 NAME_TAG = "name"
 TEXT_TAG = "text"
