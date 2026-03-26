@@ -43,23 +43,26 @@ def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
         Maybe.from_optional(element.find('./' + tag))
     )
 
-def get_element_text(element: ET.Element) -> Maybe[str]:
-    return Some(element.text)
+# when tags have a <text> child, get directly their value
+def get_element_sub_text(element: ET.Element) -> Maybe[str]:
+    return flow(
+        element,
+        get_child_with_tag(Tag.TEXT),
+        bind(lambda element: Some(element.text))
+    )
 
 def extract_question_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(Tag.QUESTION_TEXT),
-        bind(get_child_with_tag(Tag.TEXT)),
-        bind(get_element_text)
+        bind(get_element_sub_text)
     )
 
 def extract_question_name(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(Tag.NAME),
-        bind(get_child_with_tag(Tag.TEXT)),
-        bind(get_element_text)
+        bind(get_element_sub_text)
     )
 
 def element_to_question(element: ET.Element) -> Maybe[Question]:
