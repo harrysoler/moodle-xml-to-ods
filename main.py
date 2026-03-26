@@ -78,24 +78,10 @@ def get_element_sub_text(element: ET.Element) -> Maybe[str]:
         get_child_with_tag(Tag.TEXT),
     ).bind_optional(lambda element: element.text)
 
-def extract_question_text(element: ET.Element) -> Maybe[str]:
+def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
     return flow(
         element,
-        get_child_with_tag(Tag.QUESTION_TEXT),
-        bind(get_element_sub_text)
-    )
-
-def extract_question_name(element: ET.Element) -> Maybe[str]:
-    return flow(
-        element,
-        get_child_with_tag(Tag.NAME),
-        bind(get_element_sub_text)
-    )
-
-def extract_answer_feedback(element: ET.Element) -> Maybe[str]:
-    return flow(
-        element,
-        get_child_with_tag(Tag.FEEDBACK),
+        get_child_with_tag(tag),
         bind(get_element_sub_text)
     )
 
@@ -106,7 +92,7 @@ def element_to_answer(element: ET.Element) -> Maybe[Answer]:
     return Maybe.do(
         Answer(text, feedback)
         for text in get_element_sub_text(element)
-        for feedback in extract_answer_feedback(element)
+        for feedback in get_child_tag_sub_text(Tag.FEEDBACK, element)
     )
 
 def extract_answers(element: ET.Element) -> Maybe[Answers]:
@@ -123,11 +109,11 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
 def element_to_question(element: ET.Element) -> Maybe[Question]:
     if element.tag != Tag.QUESTION:
         return Nothing
-    
+
     return Maybe.do(
         Question(name, text)
-        for name in extract_question_name(element)
-        for text in extract_question_text(element)
+        for name in get_child_tag_sub_text(Tag.NAME, element)
+        for text in get_child_tag_sub_text(Tag.QUESTION_TEXT, element)
     )
 
 def main():
