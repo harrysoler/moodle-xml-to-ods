@@ -1,16 +1,15 @@
 import logging
 import xml.etree.ElementTree as ET
-from enum import StrEnum
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TypeAlias
 
+from returns import methods, pointfree
 from returns.curry import curry
 from returns.functions import tap
 from returns.maybe import Maybe, Nothing, Some
-from returns.pipeline import flow
+from returns.pipeline import flow, is_successful
 from returns.pointfree import bind, bind_optional
-from returns import methods, pointfree
-from returns.pipeline import is_successful
 
 NUMBER_OF_ANSWERS: int = 4
 
