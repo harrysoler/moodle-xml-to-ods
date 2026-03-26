@@ -11,7 +11,7 @@ from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow, is_successful
 from returns.pointfree import bind, bind_optional
 
-NUMBER_OF_ANSWERS: int = 4
+NUMBER_OF_ANSWERS: int = 3
 
 class Tag(StrEnum):
     NAME = "name"
@@ -30,7 +30,7 @@ class Answer(object):
         if len(self.text) == 0:
             raise ValueError("The answer text cannot be empty")
 
-Answers: TypeAlias = tuple[Answer, Answer, Answer, Answer]
+Answers: TypeAlias = tuple[(Answer,) * NUMBER_OF_ANSWERS]
 
 @dataclass
 class Question(object):
@@ -57,6 +57,10 @@ def flatten_list_of_somethings[T](items: list[Some[T]]) -> Maybe[list[T]]:
 @curry
 def warn_if_missing_tag(tag: Tag, element: Maybe[ET.Element]) -> None:
     element.or_else_call(lambda: logging.warning(f"Element <{tag}> not found"))
+
+def warn_if_answers_quantity_dont_match(answers: Maybe[list[ET.Element]]) -> None:
+    if answers == Nothing:
+        logging.warning(f"Answers quantity not compliant want {NUMBER_OF_ANSWERS}")
 
 @curry
 def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
@@ -101,6 +105,7 @@ def extract_answers(element: ET.Element) -> Maybe[Answers]:
         get_childs_with_tag(Tag.ANSWER),
         # check if are number of answers required or nothing
         bind(with_n_items(NUMBER_OF_ANSWERS)),
+        tap(warn_if_answers_quantity_dont_match),
         bind(lambda answers: map(element_to_answer, answers)),
         flatten_list_of_somethings,
         bind_optional(tuple)
