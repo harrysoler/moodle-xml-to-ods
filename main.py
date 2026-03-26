@@ -85,7 +85,7 @@ def get_element_sub_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(Tag.TEXT),
-        bind_optional(lambda element: element.text)
+        bind_optional(lambda element: element.text.strip())
     )
 
 def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
@@ -147,7 +147,7 @@ def extract_questions(element: ET.Element) -> Maybe[list[Question]]:
     )
 
 def main():
-    tree = ET.parse("./test.xml")
+    tree = ET.parse("./desarrollo_orientado_a_servicios.xml")
     root = tree.getroot()
 
     # logging.getLogger().setLevel(logging.DEBUG)
