@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
+import logging
 from dataclasses import dataclass
-from typing import Tuple, TypeAlias
-from returns.result import Result, Success, Failure
+from typing import TypeAlias
+# from returns.result import Result, Success, Failure
 from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
 from returns.pointfree import bind
@@ -33,10 +34,10 @@ class Question(object):
 def get_child_with_tag(tag: str, element: ET.Element) -> Maybe[ET.Element]:
     return Maybe.from_optional(element.find('./' + tag))
 
-def get_element_text(element: ET.Element) -> str:
-    return element.text
+def get_element_text(element: ET.Element) -> Maybe[str]:
+    return Some(element.text)
 
-def extract_question_text_from(element: ET.Element) -> Maybe[str]:
+def extract_question_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(QUESTION_TEXT_TAG),
@@ -44,7 +45,7 @@ def extract_question_text_from(element: ET.Element) -> Maybe[str]:
         bind(get_element_text)
     )
 
-def extract_question_name_from(element: ET.Element) -> Maybe[str]:
+def extract_question_name(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(NAME_TAG),
@@ -52,19 +53,16 @@ def extract_question_name_from(element: ET.Element) -> Maybe[str]:
         bind(get_element_text)
     )
 
-@curry
-def build_question(name: str, text: str, answers: Answers) -> Maybe[Question]:
-    Question(name, text)
-
 def element_to_question(element: ET.Element) -> Maybe[Question]:
     if element.tag != QUESTION_TAG:
         return Nothing
+    
+    return Maybe.do(
+        Question(name, text)
+        for name in extract_question_name(element)
+        for text in extract_question_text(element)
+    )
 
-    name: Maybe[str] = extract_question_name_from(element)
-
-    question_text: Maybe[str] = extract_question_text_from(element)
-
-    print(question_text)
 
 def main():
     tree = ET.parse("./test.xml")
@@ -75,6 +73,8 @@ def main():
         get_child_with_tag(QUESTION_TAG),
         bind(element_to_question)
     )
+
+    print(question)
 
 if __name__ == "__main__":
     main()
