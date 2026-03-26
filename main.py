@@ -1,5 +1,6 @@
 import logging
 import xml.etree.ElementTree as ET
+from enum import StrEnum
 from dataclasses import dataclass
 from typing import TypeAlias
 
@@ -9,10 +10,11 @@ from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
 from returns.pointfree import bind
 
-NAME_TAG = "name"
-TEXT_TAG = "text"
-QUESTION_TAG = "question"
-QUESTION_TEXT_TAG = "questiontext"
+class Tag(StrEnum):
+    NAME = "name"
+    TEXT = "text"
+    QUESTION = "question"
+    QUESTION_TEXT = "questiontext"
 
 @dataclass
 class Answer(object):
@@ -32,11 +34,11 @@ class Question(object):
     # answers: Answers
 
 @curry
-def warn_if_missing_tag(tag: str, element: Maybe[ET.Element]) -> None:
+def warn_if_missing_tag(tag: Tag, element: Maybe[ET.Element]) -> None:
     element.or_else_call(lambda: logging.warning(f"Element <{tag}> not found"))
 
 @curry
-def get_child_with_tag(tag: str, element: ET.Element) -> Maybe[ET.Element]:
+def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
     return tap(warn_if_missing_tag(tag))(
         Maybe.from_optional(element.find('./' + tag))
     )
@@ -47,21 +49,21 @@ def get_element_text(element: ET.Element) -> Maybe[str]:
 def extract_question_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
-        get_child_with_tag(QUESTION_TEXT_TAG),
-        bind(get_child_with_tag(TEXT_TAG)),
+        get_child_with_tag(Tag.QUESTION_TEXT),
+        bind(get_child_with_tag(Tag.TEXT)),
         bind(get_element_text)
     )
 
 def extract_question_name(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
-        get_child_with_tag(NAME_TAG),
-        bind(get_child_with_tag(TEXT_TAG)),
+        get_child_with_tag(Tag.NAME),
+        bind(get_child_with_tag(Tag.TEXT)),
         bind(get_element_text)
     )
 
 def element_to_question(element: ET.Element) -> Maybe[Question]:
-    if element.tag != QUESTION_TAG:
+    if element.tag != Tag.QUESTION:
         return Nothing
     
     return Maybe.do(
@@ -77,7 +79,7 @@ def main():
 
     question = flow(
         root,
-        get_child_with_tag(QUESTION_TAG),
+        get_child_with_tag(Tag.QUESTION),
         bind(element_to_question)
     )
 
