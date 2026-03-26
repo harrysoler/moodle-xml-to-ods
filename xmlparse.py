@@ -36,10 +36,9 @@ def get_childs_with_tag(tag: Tag, element: ET.Element) -> Maybe[list[ET.Element]
         Maybe.from_optional(element.findall('./' + tag))
     )
 
-# TODO: better function name
 # when tags have a <text> child, get directly their value
-def get_element_sub_text(element: ET.Element) -> Maybe[str]:
-    logging.debug(f"get_element_sub_text: Reading {element}")
+def find_element_text(element: ET.Element) -> Maybe[str]:
+    logging.debug(f"find_element_text: Reading {element}")
 
     return flow(
         element,
@@ -47,14 +46,13 @@ def get_element_sub_text(element: ET.Element) -> Maybe[str]:
         bind_optional(lambda element: element.text.strip())
     )
 
-# TODO: better function name
-def get_child_tag_sub_text(tag: Tag, element: ET.Element) -> Maybe[str]:
-    logging.debug(f"get_child_tag_sub_text: Reading {element} for tag '{tag}'")
+def find_child_element_text(child_tag: Tag, element: ET.Element) -> Maybe[str]:
+    logging.debug(f"find_child_element_text: Reading {element} for tag '{child_tag}'")
 
     return flow(
         element,
-        get_child_with_tag(tag),
-        bind(get_element_sub_text)
+        get_child_with_tag(child_tag),
+        bind(find_element_text)
     )
 
 def element_to_answer(element: ET.Element) -> Maybe[Answer]:
@@ -65,8 +63,8 @@ def element_to_answer(element: ET.Element) -> Maybe[Answer]:
 
     return Maybe.do(
         Answer(text, feedback)
-        for text in get_element_sub_text(element)
-        for feedback in get_child_tag_sub_text(Tag.FEEDBACK, element)
+        for text in find_element_text(element)
+        for feedback in find_child_element_text(Tag.FEEDBACK, element)
     )
 
 def element_to_question(element: ET.Element) -> Maybe[Question]:
@@ -77,13 +75,13 @@ def element_to_question(element: ET.Element) -> Maybe[Question]:
 
     return Maybe.do(
         Question(name, text, answers)
-        for name in get_child_tag_sub_text(Tag.NAME, element)
-        for text in get_child_tag_sub_text(Tag.QUESTION_TEXT, element)
+        for name in find_child_element_text(Tag.NAME, element)
+        for text in find_child_element_text(Tag.QUESTION_TEXT, element)
         for answers in extract_answers_from(element)
     )
 
 def extract_answers_from(element: ET.Element) -> Maybe[Answers]:
-    logging.debug(f"extract_answers: Reading {element}")
+    logging.debug(f"extract_answers_from: Reading {element}")
 
     return flow(
         element,
@@ -98,7 +96,7 @@ def extract_answers_from(element: ET.Element) -> Maybe[Answers]:
 
 # all questions must be parsed successfully or nothing
 def extract_questions_from(element: ET.Element) -> Maybe[list[Question]]:
-    logging.debug(f"extract_questions: Reading {element}")
+    logging.debug(f"extract_questions_from: Reading {element}")
 
     return flow(
         element,
