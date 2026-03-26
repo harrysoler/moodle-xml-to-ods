@@ -17,7 +17,7 @@ class Answer(object):
     text: str
     feedback: str
 
-    def __post_init__():
+    def __post_init__(self):
         if len(self.text) == 0:
             raise ValueError("The answer text cannot be empty")
 
