@@ -24,16 +24,20 @@ def warn_if_missing_tag(tag: Tag, element: Maybe[ET.Element]) -> None:
 def get_child_with_tag(tag: Tag, element: ET.Element) -> Maybe[ET.Element]:
     logging.debug(f"get_child_with_tag: Reading {element} for tag '{tag}'")
 
-    return tap(warn_if_missing_tag(tag))(
-        Maybe.from_optional(element.find('./' + tag))
+    return flow(
+        element.find('./' + tag),
+        Maybe.from_optional,
+        tap(warn_if_missing_tag)
     )
 
 @curry
 def get_childs_with_tag(tag: Tag, element: ET.Element) -> Maybe[list[ET.Element]]:
     logging.debug(f"get_childs_with_tag: Reading {element} for tags '{tag}'")
 
-    return tap(warn_if_missing_tag(tag))(
-        Maybe.from_optional(element.findall('./' + tag))
+    return flow(
+        element.findall('./' + tag),
+        Maybe.from_optional,
+        tap(warn_if_missing_tag)
     )
 
 # when tags have a <text> child, get directly their value
