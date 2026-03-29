@@ -67,6 +67,13 @@ def element_to_answer(element: ET.Element) -> Maybe[Answer]:
         for feedback in find_child_element_text(Tag.FEEDBACK, element)
     )
 
+def elements_to_answers(elements: list[ET.Element]) -> Maybe[Answers]:
+    return flow(
+        map(element_to_answer, elements),
+        maybes_to_list_or_nothing,
+        map_(tuple)
+    )
+
 def element_to_question(element: ET.Element) -> Maybe[Question]:
     logging.debug(f"element_to_question: Reading {element}")
 
@@ -95,9 +102,7 @@ def extract_answers_from(element: ET.Element) -> Maybe[Answers]:
         # check if are number of answers required or nothing
         bind(has_n_items_or_nothing(NUMBER_OF_ANSWERS)),
         tap(warn_if_list_is_nothing),
-        bind(lambda answers: map(element_to_answer, answers)),
-        maybes_to_list_or_nothing,
-        bind_optional(tuple)
+        bind(elements_to_answers)
     )
 
 # all questions must be parsed successfully or nothing
