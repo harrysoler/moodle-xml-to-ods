@@ -47,7 +47,7 @@ def find_element_text(element: ET.Element) -> Maybe[str]:
     return flow(
         element,
         get_child_with_tag(Tag.TEXT),
-        bind_optional(lambda element: element.text.strip())
+        map_(lambda element: element.text.strip())
     )
 
 def find_child_element_text(child_tag: Tag, element: ET.Element) -> Maybe[str]:
