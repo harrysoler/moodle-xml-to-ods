@@ -5,7 +5,7 @@ from returns.curry import curry
 from returns.functions import tap
 from returns.maybe import Maybe, Nothing
 from returns.pipeline import flow
-from returns.pointfree import bind, bind_optional
+from returns.pointfree import bind, bind_optional, map_
 
 from constant import NUMBER_OF_ANSWERS
 from helper import (
@@ -80,6 +80,12 @@ def element_to_question(element: ET.Element) -> Maybe[Question]:
         for answers in extract_answers_from(element)
     )
 
+def elements_to_questions(elements: list[ET.Element]) -> Maybe[list[Question]]:
+    return flow(
+        map(element_to_question, elements),
+        maybes_to_list_or_nothing
+    )
+
 def extract_answers_from(element: ET.Element) -> Maybe[Answers]:
     logging.debug(f"extract_answers_from: Reading {element}")
 
@@ -101,6 +107,5 @@ def extract_questions_from(element: ET.Element) -> Maybe[list[Question]]:
     return flow(
         element,
         get_childs_with_tag(Tag.QUESTION),
-        bind(lambda questions: map(element_to_question, questions)),
-        maybes_to_list_or_nothing
+        bind(elements_to_questions)
     )
